@@ -24,10 +24,24 @@ public class MainActivity extends Activity {
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
+        webSettings.setDatabaseEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
+        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // Automatically ensure local storage has the correct base endpoint initialized
+                webView.evaluateJavascript(
+                    "try { " +
+                    "  if(!localStorage.getItem('api_base_url') && !localStorage.getItem('baseUrl')) { " +
+                    "    localStorage.setItem('api_base_url', 'https://api.anthropic.com'); " +
+                    "  } " +
+                    "} catch(e) {}", null);
+            }
+        });
         
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
