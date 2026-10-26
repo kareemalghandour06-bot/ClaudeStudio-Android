@@ -30,10 +30,9 @@ public class MainActivity extends AppCompatActivity {
 
         webView.setWebViewClient(new WebViewClient());
         
-        // Handle file/PDF picker requests from the web app
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
+            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 if (MainActivity.this.filePathCallback != null) {
                     MainActivity.this.filePathCallback.onReceiveValue(null);
                 }
@@ -61,15 +60,8 @@ public class MainActivity extends AppCompatActivity {
             if (filePathCallback == null) return;
             Uri[] results = null;
             if (resultCode == Activity.RESULT_OK && intent != null) {
-                String dataString = intent.getDataString();
-                if (dataString != null) {
-                    results = new Uri[]{Uri.parse(dataString)};
-                } else if (intent.getClipData() != null) {
-                    int count = intent.getClipData().getItemCount();
-                    results = new Uri[count];
-                    for (int i = 0; i < count; i++) {
-                        results[i] = intent.getClipData().getItemAt(i).getUri();
-                    }
+                if (intent.getDataString() != null) {
+                    results = new Uri[]{Uri.parse(intent.getDataString())};
                 }
             }
             filePathCallback.onReceiveValue(results);
