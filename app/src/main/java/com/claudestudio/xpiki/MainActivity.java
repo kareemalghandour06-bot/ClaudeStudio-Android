@@ -14,8 +14,8 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
-    private ValueCallback<Uri[]> filePathCallback;
-    private final static int FILE_CHOOSER_RESULT_CODE = 1;
+    private ValueCallback<Uri[]> uploadMessage;
+    private final static int REQUEST_SELECT_FILE = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,17 +32,18 @@ public class MainActivity extends AppCompatActivity {
         
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
-                if (MainActivity.this.filePathCallback != null) {
-                    MainActivity.this.filePathCallback.onReceiveValue(null);
+            public boolean onShowFileChooser(WebView mWebView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
+                if (uploadMessage != null) {
+                    uploadMessage.onReceiveValue(null);
+                    uploadMessage = null;
                 }
-                MainActivity.this.filePathCallback = filePathCallback;
-
-                Intent intent = fileChooserParams.createIntent();
+                uploadMessage = filePathCallback;
+                
                 try {
-                    startActivityForResult(intent, FILE_CHOOSER_RESULT_CODE);
+                    Intent intent = fileChooserParams.createIntent();
+                    startActivityForResult(intent, REQUEST_SELECT_FILE);
                 } catch (Exception e) {
-                    MainActivity.this.filePathCallback = null;
+                    uploadMessage = null;
                     return false;
                 }
                 return true;
@@ -56,16 +57,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-        if (requestCode == FILE_CHOOSER_RESULT_CODE) {
-            if (filePathCallback == null) return;
+        if (requestCode == REQUEST_SELECT_FILE) {
+            if (uploadMessage == null) return;
             Uri[] results = null;
             if (resultCode == Activity.RESULT_OK && intent != null) {
-                if (intent.getDataString() != null) {
-                    results = new Uri[]{Uri.parse(intent.getDataString())};
+                String dataString = intent.getDataString();
+                if (dataString != null) {
+                    results = new Uri[]{Uri.parse(dataString)};
                 }
             }
-            filePathCallback.onReceiveValue(results);
-            filePathCallback = null;
+            uploadMessage.onReceiveValue(results);
+            uploadMessage = null;
         }
     }
 
