@@ -35,7 +35,6 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                // Automatically inject CORS bypass headers and default base URL on load
                 webView.evaluateJavascript(
                     "(function() {" +
                     "  try {" +
@@ -91,11 +90,9 @@ public class MainActivity extends Activity {
         if (requestCode == REQUEST_SELECT_FILE) {
             if (uploadMessage == null) return;
             Uri[] results = null;
-            if (resultCode == Activity.RESULT_OK && intent != null) {
-                String dataString = intent.getDataString();
-                if (dataString != null) {
-                    results = new Uri[]{Uri.parse(dataString)};
-                }
+            if (resultCode == Activity.RESULT_OK) {
+                // Use Android's native parser to correctly handle PDF Uris from any file provider
+                results = WebChromeClient.FileChooserParams.parseResult(resultCode, intent);
             }
             uploadMessage.onReceiveValue(results);
             uploadMessage = null;
