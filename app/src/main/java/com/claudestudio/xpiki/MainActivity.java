@@ -27,19 +27,37 @@ public class MainActivity extends Activity {
         webSettings.setDatabaseEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                // Automatically ensure local storage has the correct base endpoint initialized
+                // Automatically inject CORS bypass headers and default base URL on load
                 webView.evaluateJavascript(
-                    "try { " +
-                    "  if(!localStorage.getItem('api_base_url') && !localStorage.getItem('baseUrl')) { " +
-                    "    localStorage.setItem('api_base_url', 'https://api.anthropic.com'); " +
-                    "  } " +
-                    "} catch(e) {}", null);
+                    "(function() {" +
+                    "  try {" +
+                    "    if (!localStorage.getItem('api_base_url') && !localStorage.getItem('anthropic_base_url')) {" +
+                    "      localStorage.setItem('api_base_url', 'https://api.anthropic.com');" +
+                    "      localStorage.setItem('anthropic_base_url', 'https://api.anthropic.com');" +
+                    "    }" +
+                    "    const origFetch = window.fetch;" +
+                    "    window.fetch = async function(resource, init) {" +
+                    "      init = init || {};" +
+                    "      init.headers = init.headers || {};" +
+                    "      if (resource.toString().includes('anthropic.com')) {" +
+                    "        if (init.headers instanceof Headers) {" +
+                    "          init.headers.set('anthropic-dangerous-direct-browser-access', 'true');" +
+                    "        } else {" +
+                    "          init.headers['anthropic-dangerous-direct-browser-access'] = 'true';" +
+                    "        }" +
+                    "      }" +
+                    "      return origFetch(resource, init);" +
+                    "    };" +
+                    "  } catch(e) {}" +
+                    "})();", null);
             }
         });
         
